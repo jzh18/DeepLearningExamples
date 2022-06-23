@@ -74,7 +74,7 @@ printf "Logs written to %s\n" "$LOGFILE"
 
 set -x
 $mpi_command python run_squad.py \
-  --mode=train_and_predict \
+  --mode=train \
   --input_meta_data_path=${SQUAD_DIR}/squad_${SQUAD_VERSION}_meta_data \
   --train_data_path=${SQUAD_DIR}/squad_${SQUAD_VERSION}_train.tf_record \
   --predict_file=${SQUAD_DIR}/dev-${SQUAD_VERSION}.json \
