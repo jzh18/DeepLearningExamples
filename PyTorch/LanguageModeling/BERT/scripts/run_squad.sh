@@ -15,20 +15,20 @@
 
 echo "Container nvidia build = " $NVIDIA_BUILD_ID
 
-init_checkpoint=${1:-"/workspace/bert/checkpoints/bert_uncased.pt"}
+init_checkpoint=${1:-"/workspace/bert/checkpoints/bert_large_qa.pt"}
 epochs=${2:-"2.0"}
 batch_size=${3:-"4"}
 learning_rate=${4:-"3e-5"}
 warmup_proportion=${5:-"0.1"}
 precision=${6:-"fp16"}
-num_gpu=${7:-"8"}
+num_gpu=${7:-"1"}
 seed=${8:-"1"}
 squad_dir=${9:-"$BERT_PREP_WORKING_DIR/download/squad/v1.1"}
 vocab_file=${10:-"$BERT_PREP_WORKING_DIR/download/google_pretrained_weights/uncased_L-24_H-1024_A-16/vocab.txt"}
 OUT_DIR=${11:-"/workspace/bert/results/SQuAD"}
-mode=${12:-"train eval"}
+mode=${12:-"train"}
 CONFIG_FILE=${13:-"/workspace/bert/bert_configs/large.json"}
-max_steps=${14:-"-1"}
+max_steps=${14:-"3"}
 
 echo "out dir is $OUT_DIR"
 mkdir -p $OUT_DIR

@@ -14,8 +14,8 @@
 # limitations under the License.
 
 #Download
-download_wikipedia --outdir ${BERT_PREP_WORKING_DIR}/wikipedia/
+# download_wikipedia --outdir ${BERT_PREP_WORKING_DIR}/wikipedia/
 python3 /workspace/bert/data/bertPrep.py --action download --dataset google_pretrained_weights  # Includes vocab
 python3 /workspace/bert/data/bertPrep.py --action download --dataset squad
-python3 /workspace/bert/data/bertPrep.py --action download --dataset mrpc
-python3 /workspace/bert/data/bertPrep.py --action download --dataset sst-2
+# python3 /workspace/bert/data/bertPrep.py --action download --dataset mrpc
+# python3 /workspace/bert/data/bertPrep.py --action download --dataset sst-2

@@ -1,0 +1,1 @@
+docker run  -v /home/ubuntu/repos/DeepLearningExamples/PyTorch/LanguageModeling/BERT:/workspace/bert -v /home/ubuntu/repos/DeepLearningExamples/PyTorch/LanguageModeling/BERT/results:/results   -t -e TRACE=true  --gpus all bert bash scripts/run_squad.sh
