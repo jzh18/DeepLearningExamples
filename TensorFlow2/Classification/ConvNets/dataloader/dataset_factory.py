@@ -430,15 +430,30 @@ class Dataset:
         return dataset
     else:
         print("Using tf native pipeline for {train} dataloading".format(train = "training" if self.is_training else "validation"))
-        dataset = self.load_records()
+        dataset = self.load_tfds()
         dataset = self.pipeline(dataset)
-
         return dataset
 
   # def augment_pipeline(self, image, label) -> Tuple[tf.Tensor, tf.Tensor]:
   #   image = self._augmenter.distort(image)
   #   return image, label
 
+  def load_tfds(self) -> tf.data.Dataset:
+    """Return a dataset loading files from TFDS."""
+    builder = tfds.builder('imagenet2012',data_dir=self._data_dir)
+    builder.download_and_prepare(download_dir=self._data_dir+'/'+'downloads')
+
+    read_config = tfds.ReadConfig(
+        interleave_cycle_length=10,
+        interleave_block_length=1)
+
+    dataset = builder.as_dataset(
+        split=self._split,
+        as_supervised=True,
+        shuffle_files=True,
+        read_config=read_config)
+
+    return dataset
 
   def load_records(self) -> tf.data.Dataset:
     """Return a dataset loading files with TFRecords."""
@@ -446,7 +461,7 @@ class Dataset:
         raise ValueError('Dataset must specify a path for the data files.')
 
     file_pattern = os.path.join(self._data_dir,
-                                  '{}*'.format(self._split))
+                                  'imagenet2012-{}*'.format(self._split))
     dataset = tf.data.Dataset.list_files(file_pattern, shuffle=False)
     return dataset
 
@@ -459,30 +474,9 @@ class Dataset:
     Returns:
       A TensorFlow dataset outputting batched images and labels.
     """
-    # This can help resolve OOM issues when using only 1 GPU for training
-    options = tf.data.Options()
-    options.experimental_optimization.map_parallelization = (not self.disable_map_parallelization)
-    dataset = dataset.with_options(options)
     
-    if self._num_gpus > 1:
-      # For multi-host training, we want each hosts to always process the same
-      # subset of files.  Each host only sees a subset of the entire dataset,
-      # allowing us to cache larger datasets in memory.
-      dataset = dataset.shard(self._num_gpus, hvd.rank())
-
-    if self.is_training:
-      # Shuffle the input files.
-      dataset.shuffle(buffer_size=self._file_shuffle_buffer_size)
-
     if self.is_training and not self._cache:
       dataset = dataset.repeat()
-
-    # Read the data from disk in parallel
-    dataset = dataset.interleave(
-        tf.data.TFRecordDataset,
-        cycle_length=10,
-        block_length=1,
-        num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     if self._cache:
       dataset = dataset.cache()
@@ -490,11 +484,14 @@ class Dataset:
     if self.is_training:
       dataset = dataset.shuffle(self._shuffle_buffer_size)
       dataset = dataset.repeat()
+    
 
     # Parse, pre-process, and batch the data in parallel
     preprocess = self.parse_record
+    
     dataset = dataset.map(preprocess,
                           num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    
     if self._num_gpus > 1:
       # The batch size of the dataset will be multiplied by the number of
       # replicas automatically when strategy.distribute_datasets_from_function
@@ -523,43 +520,14 @@ class Dataset:
     
     # Prefetch overlaps in-feed with training
     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+    
 
     return dataset
 
-  def parse_record(self, record: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+  def parse_record(self,p_image: tf.Tensor, p_label: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     """Parse an ImageNet record from a serialized string Tensor."""
-    keys_to_features = {
-        'image/encoded':
-            tf.io.FixedLenFeature((), tf.string, ''),
-        'image/format':
-            tf.io.FixedLenFeature((), tf.string, 'jpeg'),
-        'image/class/label':
-            tf.io.FixedLenFeature([], tf.int64, -1),
-        'image/class/text':
-            tf.io.FixedLenFeature([], tf.string, ''),
-        'image/object/bbox/xmin':
-            tf.io.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/ymin':
-            tf.io.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/xmax':
-            tf.io.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/ymax':
-            tf.io.VarLenFeature(dtype=tf.float32),
-        'image/object/class/label':
-            tf.io.VarLenFeature(dtype=tf.int64),
-    }
-
-    parsed = tf.io.parse_single_example(record, keys_to_features)
-
-    label = tf.reshape(parsed['image/class/label'], shape=[1])
-    label = tf.cast(label, dtype=tf.int32)
-
-    # Subtract one so that labels are in [0, 1000)
-    label -= 1
-
-    image_bytes = tf.reshape(parsed['image/encoded'], shape=[])
-    image, label = self.preprocess(image_bytes, label)
-
+    image, label = self.preprocess(p_image, p_label)
+    
     # populate features and labels dict
     features = dict()
     labels = dict()
@@ -570,6 +538,7 @@ class Dataset:
     else:
       features['cutmix_mask'] = tf.zeros((self._image_size, self._image_size,1))
     labels['label'] = label  
+    
     return features, labels
 
   def preprocess(self, image: tf.Tensor, label: tf.Tensor
