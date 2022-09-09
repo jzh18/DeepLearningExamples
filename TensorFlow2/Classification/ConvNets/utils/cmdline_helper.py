@@ -259,7 +259,7 @@ def parse_cmdline():
     p.add_argument('--index_file', type=str, default=None, required=False, help="Path to index file required for dali.")
 
     # dataset and split
-    p.add_argument('--data_dir', type=str, default='/data/', required=False, help='The location of the input data. Files should be named `train-*` and `validation-*`.')
+    p.add_argument('--data_dir', type=str, default='/home/ubuntu/mnt/data/resnet/data_dir/imagenet2012/5.1.0/', required=False, help='The location of the input data. Files should be named `train-*` and `validation-*`.')
 
     p.add_argument('--num_classes', type=int, default=1000, required=False, help="Number of classes to train on.")
 

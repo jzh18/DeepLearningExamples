@@ -154,6 +154,8 @@ class Runner(object):
         global_batch_size_eval = self.params.eval_batch_size * hvd.size()
         validation_steps = self.params.eval_num_examples //global_batch_size_eval if "eval" in self.params.mode else None
         
+        print('===================warm up: ',self.params.lr_warmup_epochs)
+        print('===================decay: ',self.params.lr_decay_epochs)
         # set up lr schedule
         learning_rate = optimizer_factory.build_learning_rate(
             params=get_learning_rate_params(name=self.params.lr_decay,
@@ -239,7 +241,8 @@ class Runner(object):
             intratrain_eval_using_ema=self.params.intratrain_eval_using_ema,
             logger=self.logger)
 
-
+        print('========================eval epochs: ',self.params.num_epochs_between_eval)
+        print('========================eval steps:', validation_steps)
         n_stages = self.params.n_stages
         if not n_stages or n_stages == 1:
             # =================================================
@@ -262,9 +265,8 @@ class Runner(object):
             
             history = self.model.fit(
                 self.train_dataset,
-                epochs=train_epochs,
-                steps_per_epoch=train_steps,
-                initial_epoch=resumed_epoch,
+                epochs=1,
+                steps_per_epoch=1,
                 callbacks=callbacks,
                 verbose=2,
                 **validation_kwargs)
@@ -340,11 +342,12 @@ class Runner(object):
                                                                             self.params.raug_magnitude,
                                                                             ))
 
+
                 history = self.model.fit(
                     self.train_dataset,
                     epochs=epoch_end,
                     steps_per_epoch=train_steps,
-                    initial_epoch=epoch_curr,
+                    initial_epoch=1,
                     callbacks=callbacks,
                     verbose=2,
                     **validation_kwargs)
@@ -358,6 +361,7 @@ class Runner(object):
         validation_output = None
         eval_callbacks = []
         if not self.params.skip_eval and self.validation_builder is not None:
+            print('=======================start eval=====================')
             eval_callbacks.append(custom_callbacks.EvalTimeHistory(batch_size=self.params.eval_batch_size, logger=self.logger))
             validation_output = self.model.evaluate(
                 self.validation_dataset, callbacks=eval_callbacks, verbose=2)

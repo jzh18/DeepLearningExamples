@@ -101,6 +101,10 @@ class Model(tf.keras.Model):
       mixup_weights = data['mixup_weight']
       cutmix_masks = data['cutmix_mask']
       is_tr_split = data['is_tr_split']
+      print('----------------------x shape: ',x.shape)
+      print('----------------------cutmix_mask shape: ',cutmix_masks.shape)
+      print('----------------------is_tr_split: ',is_tr_split)
+      print(f'--------------------start {self.config.mode}-------------------')
       return self.model([x,mixup_weights,cutmix_masks,is_tr_split])
     else:
       return self.model([data])

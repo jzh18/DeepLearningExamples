@@ -19,11 +19,11 @@ python3 main.py \
         --use_xla \
         --model_dir ./output/ \
         --data_dir /data/ \
-        --log_steps 500 \
+        --log_steps 1 \
         --save_checkpoint_freq 10 \
-        --n_stages 4 \
-        --max_epochs 350 \
-        --train_batch_size 460 \
+        --n_stages 1 \
+        --max_epochs 1 \
+        --train_batch_size 2 \
         --train_img_size 300 \
         --base_img_size 128 \
         --lr_decay cosine \
@@ -32,10 +32,11 @@ python3 main.py \
         --opt_epsilon 0.001 \
         --moving_average_decay 0.9999 \
         --eval_img_size 384 \
-        --eval_batch_size 100 \
+        --eval_batch_size 2 \
         --augmenter_name randaugment \
         --raug_num_layers 2 \
         --raug_magnitude 15 \
         --cutmix_alpha 0 \
         --mixup_alpha 0 \
-        --defer_img_mixing 
+        --defer_img_mixing \
+        --steps_per_epoch 1
