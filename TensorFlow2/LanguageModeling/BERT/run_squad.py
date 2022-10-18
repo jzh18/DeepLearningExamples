@@ -336,7 +336,7 @@ def train_squad(strategy,
   global_batch_size = FLAGS.train_batch_size * FLAGS.num_accumulation_steps
   if FLAGS.use_horovod:
     global_batch_size *= hvd.size()
-  steps_per_epoch = 10
+  steps_per_epoch = int(num_train_examples / global_batch_size)
   warmup_steps = int(epochs * num_train_examples * 0.1 / global_batch_size)
   train_input_fn = get_dataset_fn(
       FLAGS.train_data_path,
